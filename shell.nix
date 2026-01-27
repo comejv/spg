@@ -20,4 +20,8 @@ mkShell {
 
     raylib
   ];
+
+  shellHook = ''
+    export LSAN_OPTIONS=suppressions=$(pwd)/lsan.supp
+  '';
 }

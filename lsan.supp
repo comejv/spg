@@ -1,0 +1,7 @@
+# Suppress leaks from external GUI and system libraries
+leak:libgtk
+leak:libfontconfig
+leak:libpango
+leak:libdecor
+leak:libglfw
+leak:libglib
