@@ -1,9 +1,6 @@
-#ifndef INPUT_H
-#define INPUT_H
+#pragma once
 
 #include "common.h"
 
 void UpdateCameraControl(Camera3D *camera);
 void HandleInput(SimulationState *sim);
-
-#endif // INPUT_H

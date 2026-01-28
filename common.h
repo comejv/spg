@@ -1,9 +1,13 @@
-#ifndef COMMON_H
-#define COMMON_H
+#pragma once
 
 #include "geodesic.h"
 #include <raylib.h>
 #include <stdbool.h>
+
+#define LIGHT_SPEED 299792458.F
+#define GRAVITY     6.67408E-11F
+#define G           GRAVITY
+#define EARTH_MASS  5.972e24F
 
 #define MAX_TRAIL_LENGTH 1000
 #define MAX_PARTICLES    10
@@ -34,5 +38,3 @@ typedef struct
   int steps_per_frame;
   double r_s;   // Schwarzschild radius
 } SimulationState;
-
-#endif   // COMMON_H
