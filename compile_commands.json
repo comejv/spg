@@ -1,1 +1,104 @@
-[]
+[
+  {
+    "arguments": [
+      "/nix/store/bcw9f6r9v2fm3kv7d15fcrya0mf34xds-gcc-wrapper-14.3.0/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-O3",
+      "-c",
+      "-I",
+      "headers",
+      "-o",
+      "objects/body.o",
+      "src/body.c"
+    ],
+    "directory": "/home/comev/Documents/spg/generalize",
+    "file": "/home/comev/Documents/spg/generalize/src/body.c",
+    "output": "/home/comev/Documents/spg/generalize/objects/body.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/bcw9f6r9v2fm3kv7d15fcrya0mf34xds-gcc-wrapper-14.3.0/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-O3",
+      "-c",
+      "-I",
+      "headers",
+      "-o",
+      "objects/geodesic.o",
+      "src/geodesic.c"
+    ],
+    "directory": "/home/comev/Documents/spg/generalize",
+    "file": "/home/comev/Documents/spg/generalize/src/geodesic.c",
+    "output": "/home/comev/Documents/spg/generalize/objects/geodesic.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/bcw9f6r9v2fm3kv7d15fcrya0mf34xds-gcc-wrapper-14.3.0/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-O3",
+      "-c",
+      "-I",
+      "headers",
+      "-o",
+      "objects/main.o",
+      "src/main.c"
+    ],
+    "directory": "/home/comev/Documents/spg/generalize",
+    "file": "/home/comev/Documents/spg/generalize/src/main.c",
+    "output": "/home/comev/Documents/spg/generalize/objects/main.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/bcw9f6r9v2fm3kv7d15fcrya0mf34xds-gcc-wrapper-14.3.0/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-O3",
+      "-c",
+      "-I",
+      "headers",
+      "-o",
+      "objects/particle.o",
+      "src/particle.c"
+    ],
+    "directory": "/home/comev/Documents/spg/generalize",
+    "file": "/home/comev/Documents/spg/generalize/src/particle.c",
+    "output": "/home/comev/Documents/spg/generalize/objects/particle.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/bcw9f6r9v2fm3kv7d15fcrya0mf34xds-gcc-wrapper-14.3.0/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-O3",
+      "-c",
+      "-I",
+      "headers",
+      "-o",
+      "objects/simulation.o",
+      "src/simulation.c"
+    ],
+    "directory": "/home/comev/Documents/spg/generalize",
+    "file": "/home/comev/Documents/spg/generalize/src/simulation.c",
+    "output": "/home/comev/Documents/spg/generalize/objects/simulation.o"
+  },
+  {
+    "arguments": [
+      "/nix/store/bcw9f6r9v2fm3kv7d15fcrya0mf34xds-gcc-wrapper-14.3.0/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-O3",
+      "-c",
+      "-I",
+      "headers",
+      "-o",
+      "objects/weakfield.o",
+      "src/weakfield.c"
+    ],
+    "directory": "/home/comev/Documents/spg/generalize",
+    "file": "/home/comev/Documents/spg/generalize/src/weakfield.c",
+    "output": "/home/comev/Documents/spg/generalize/objects/weakfield.o"
+  }
+]

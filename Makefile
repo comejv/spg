@@ -36,4 +36,4 @@ ensure_dirs:
 	mkdir -p $(OBJS_DIR)
 
 clean:
-	rm -rf main $(OBJS_DIR)
+	rm -rf spg_sim $(OBJS_DIR)

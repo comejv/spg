@@ -1,7 +1,8 @@
 #include "geodesic.h"
+#include "particle.h"
 #include <math.h>
 
-GeodesicState geodesic_deriv(GeodesicState state, SystemParams sys, ParticleParams p)
+GeodesicState geodesic_deriv(const GeodesicState state, const SystemParams sys, const ParticleParams *p)
 {
   GeodesicState d_state = {0};
 
@@ -10,8 +11,8 @@ GeodesicState geodesic_deriv(GeodesicState state, SystemParams sys, ParticlePara
   double G = sys.G;
   double M = sys.M;
   double c = sys.c;
-  double E = p.E;
-  double L = p.L;
+  double E = p->E;
+  double L = p->L;
 
   double rs = 2.0 * G * M / (c * c);
   double f = 1.0 - (rs / r);
@@ -50,7 +51,7 @@ GeodesicState geodesic_deriv(GeodesicState state, SystemParams sys, ParticlePara
   return d_state;
 }
 
-GeodesicState rk4_step_geodesic(GeodesicState s, SystemParams sys, ParticleParams p, double h)
+GeodesicState rk4_step_geodesic(const GeodesicState s, const SystemParams sys, const ParticleParams *p, double h)
 {
   // k1
   GeodesicState k1 = geodesic_deriv(s, sys, p);
@@ -89,14 +90,11 @@ GeodesicState rk4_step_geodesic(GeodesicState s, SystemParams sys, ParticleParam
   return result;
 }
 
-void circular_orbit_constants(double r0, SystemParams sys,
-                              double *E_out, double *L_out)
+void circular_orbit_constants(double r0, SystemParams sys, double *E_out, double *L_out)
 {
-  double e_top = 1 - (2 * sys.M / r0);
-  double e_bottom = sqrt(1 - (3 * sys.M / r0));
-  *E_out = e_top / e_bottom;
+  double mu = sys.G * sys.M / (sys.c * sys.c);   // geometric mass parameter
+  double denom = sqrt(1.0 - (3.0 * mu / r0));
 
-  double l_top = sqrt(sys.M * r0);
-  double l_bottom = sqrt(1 - (3 * sys.M / r0));
-  *L_out = l_top / l_bottom;
+  *E_out = (1.0 - (2.0 * mu / r0)) / denom;
+  *L_out = sqrt(mu * r0) / denom;
 }

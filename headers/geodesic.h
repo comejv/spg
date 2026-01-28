@@ -20,13 +20,8 @@ typedef struct
   double c;   // Speed of light
 } SystemParams;
 
-// Physical parameters for the particle
-typedef struct
-{
-  double E;          // Energy per unit mass (or Energy parameter for photons)
-  double L;          // Angular momentum per unit mass
-  bool is_massive;   // true for massive particles (H = -c^2/2), false for photons (H = 0)
-} ParticleParams;
+// Forward declaration of ParticleParams (defined in particle.h)
+typedef struct ParticleParams ParticleParams;
 
 /**
  * @brief Computes the derivative of the state vector (dt, dr, dphi, dpr).
@@ -36,7 +31,7 @@ typedef struct
  * @param p Particle parameters (E, L, is_massive)
  * @return Derivative of the state
  */
-GeodesicState geodesic_deriv(GeodesicState state, SystemParams sys, ParticleParams p);
+GeodesicState geodesic_deriv(GeodesicState state, SystemParams sys, const ParticleParams *p);
 
 /**
  * @brief Performs a single RK4 integration step.
@@ -47,7 +42,7 @@ GeodesicState geodesic_deriv(GeodesicState state, SystemParams sys, ParticlePara
  * @param step_size Step size in affine parameter (lambda/tau)
  * @return New state after the step
  */
-GeodesicState rk4_step_geodesic(GeodesicState s, SystemParams sys, ParticleParams p, double h);
+GeodesicState rk4_step_geodesic(GeodesicState s, SystemParams sys, const ParticleParams *p, double h);
 
 /**
  * @brief Calculates the constants E and L for a circular orbit.
