@@ -5,6 +5,7 @@ LDFLAGS = -lm -lraylib
 
 SRCS_DIR = src
 HEADERS_DIR = headers
+EXTERNAL_DIR = external
 OBJS_DIR = objects
 
 SRCS = $(wildcard $(SRCS_DIR)/*.c)
@@ -30,7 +31,7 @@ spg_sim: ensure_dirs $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@
 
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@ -I $(HEADERS_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@ -I$(HEADERS_DIR) -I$(EXTERNAL_DIR)
 
 ensure_dirs:
 	mkdir -p $(OBJS_DIR)

@@ -11,4 +11,4 @@ typedef struct
   Color color;
 } Body;
 
-void InitBody(Body *b, Vector3 position, double mass, double radius, Color color);
+void init_body(Body *b, Vector3 position, double mass, double radius, Color color);

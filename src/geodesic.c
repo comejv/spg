@@ -59,40 +59,37 @@ GeodesicState rk4_step_geodesic(const GeodesicState s, const SystemParams sys, c
   // k2
   GeodesicState s2;
   s2.t = s.t + 0.5 * h * k1.t;
-  s2.r = s.r + 0.5 * h * k1.r;
-  s2.phi = s.phi + 0.5 * h * k1.phi;
-  s2.pr = s.pr + 0.5 * h * k1.pr;
+  s2.u = v3d_add(s.u, v3d_scale(k1.u, 0.5 * h));
   GeodesicState k2 = geodesic_deriv(s2, sys, p);
 
   // k3
   GeodesicState s3;
   s3.t = s.t + 0.5 * h * k2.t;
-  s3.r = s.r + 0.5 * h * k2.r;
-  s3.phi = s.phi + 0.5 * h * k2.phi;
-  s3.pr = s.pr + 0.5 * h * k2.pr;
+  s3.u = v3d_add(s.u, v3d_scale(k2.u, 0.5 * h));
   GeodesicState k3 = geodesic_deriv(s3, sys, p);
 
   // k4
   GeodesicState s4;
   s4.t = s.t + h * k3.t;
-  s4.r = s.r + h * k3.r;
-  s4.phi = s.phi + h * k3.phi;
-  s4.pr = s.pr + h * k3.pr;
+  s4.u = v3d_add(s.u, v3d_scale(k3.u, h));
   GeodesicState k4 = geodesic_deriv(s4, sys, p);
 
   // Combine
   GeodesicState result;
   result.t = s.t + (h / 6.0) * (k1.t + 2 * k2.t + 2 * k3.t + k4.t);
-  result.r = s.r + (h / 6.0) * (k1.r + 2 * k2.r + 2 * k3.r + k4.r);
-  result.phi = s.phi + (h / 6.0) * (k1.phi + 2 * k2.phi + 2 * k3.phi + k4.phi);
-  result.pr = s.pr + (h / 6.0) * (k1.pr + 2 * k2.pr + 2 * k3.pr + k4.pr);
+
+  Vec3d sum_k = v3d_add(k1.u, v3d_scale(k2.u, 2.0));
+  sum_k = v3d_add(sum_k, v3d_scale(k3.u, 2.0));
+  sum_k = v3d_add(sum_k, k4.u);
+
+  result.u = v3d_add(s.u, v3d_scale(sum_k, h / 6.0));
 
   return result;
 }
 
 void circular_orbit_constants(double r0, SystemParams sys, double *E_out, double *L_out)
 {
-  double mu = sys.G * sys.M / (sys.c * sys.c);   // geometric mass parameter
+  double mu = mu_geom(sys);
   double denom = sqrt(1.0 - (3.0 * mu / r0));
 
   *E_out = (1.0 - (2.0 * mu / r0)) / denom;

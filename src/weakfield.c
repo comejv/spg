@@ -90,6 +90,39 @@ static WeakFieldState weakfield_deriv(WeakFieldState s, const Simulation *sim)
   return ds;
 }
 
+void weakfield_project_to_constraint(WeakFieldState *s, const Simulation *sim, bool is_massive)
+{
+  double U = 0.0;
+  Vec3d gradU = V3d(0, 0, 0);
+  potential_and_gradU(sim, s->x, &U, &gradU);
+
+  double c = sim->c;
+  double c2 = c * c;
+
+  double A = 1.0 - (2.0 * U / c2);
+  double B = 1.0 + (2.0 * U / c2);
+
+  if (A < 1e-9)
+    A = 1e-9;
+  if (B < 1e-9)
+    B = 1e-9;
+
+  double gtt = -1.0 / (A * c2);
+  double target = is_massive ? (-c2) : 0.0;
+
+  // Need p^2 such that: gtt pt^2 + (1/B) p^2 = target
+  double p2_des = B * (target - gtt * s->pt * s->pt);
+  if (p2_des < 0.0)
+    return;   // can't project (weak-field broken or pt too small)
+
+  double p2 = v3d_len2(s->p);
+  if (p2 < 1e-30)
+    return;
+
+  double scale = sqrt(p2_des / p2);
+  s->p = v3d_scale(s->p, scale);
+}
+
 WeakFieldState weakfield_rk4_step(WeakFieldState s, const Simulation *sim, double h)
 {
   WeakFieldState k1 = weakfield_deriv(s, sim);

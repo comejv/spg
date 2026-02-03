@@ -1,12 +1,23 @@
 #include "body.h"
 #include "simulation.h"
+#define CLAY_IMPLEMENTATION
+#include "clay.h"
+#include "clay_renderer_raylib.c"
 #include <math.h>
 #include <raylib.h>
 #include <raymath.h>
 
-#define UI_FONT_SIZE 20
+#define FONT_DEFAULT_PATH "resources/DejaVuSans.ttf"
+#define UI_FONT_SIZE      22
 
-void UpdateCameraControl(Camera3D *camera)
+Font fonts[1];
+
+Clay_String Clay_String_FromChar(const char *chars)
+{
+  return (Clay_String) {.length = (int32_t) strlen(chars), .chars = chars};
+}
+
+void update_camera_control(Camera3D *camera)
 {
   Vector3 d = Vector3Subtract(camera->position, camera->target);
   float dist = Vector3Length(d);
@@ -44,7 +55,7 @@ void UpdateCameraControl(Camera3D *camera)
   camera->position.y = camera->target.y + dist * sinf(camera_pitch);
 }
 
-void HandleInput(Simulation *sim, float frame_dt)
+void handle_input(Simulation *sim, float frame_dt)
 {
   if (IsKeyPressed(KEY_SPACE))
   {
@@ -74,6 +85,7 @@ void HandleInput(Simulation *sim, float frame_dt)
     // Radial momentum
     if (IsKeyDown(KEY_Q))
     {
+      TraceLog(LOG_DEBUG, "Pressed Q");
       if (sel_p->model == PARTICLE_MODEL_SCHW)
         sel_p->state.pr -= base;
       else
@@ -83,11 +95,14 @@ void HandleInput(Simulation *sim, float frame_dt)
         double phi = atan2(x.z, x.x);
         Vec3d rhat = V3d(cos(phi), 0.0, sin(phi));
         sel_p->wf.p = v3d_add(sel_p->wf.p, v3d_scale(rhat, -base));
+        SystemParams sys = {sim->G, sim->bodies[0].mass, sim->c};
+        enforce_constraint_schwarzschild(sel_p, sys);
       }
     }
 
     if (IsKeyDown(KEY_W))
     {
+      TraceLog(LOG_DEBUG, "Pressed W");
       if (sel_p->model == PARTICLE_MODEL_SCHW)
         sel_p->state.pr += base;
       else
@@ -117,9 +132,9 @@ void HandleInput(Simulation *sim, float frame_dt)
     if (sim->body_count > 0)
     {
       SystemParams sys = {sim->G, sim->bodies[0].mass, sim->c};
-      InitParticle(&sim->particles[0], sys, 10.0, 0.0, -0.1, true);
-      InitParticle(&sim->particles[1], sys, 20.0, 3.14159, -0.8, false);
-      // reset others to inactive?
+      init_particle(&sim->particles[0], sys, 10.0, 0.0, -0.1, true);
+      init_particle(&sim->particles[1], sys, 20.0, 3.14159, -0.8, false);
+      // reset others to inactive
       for (int i = 2; i < MAX_PARTICLES; i++)
         sim->particles[i].active = false;
     }
@@ -127,7 +142,7 @@ void HandleInput(Simulation *sim, float frame_dt)
   }
 }
 
-void DrawScene(const Simulation *sim)
+void draw_scene(const Simulation *sim)
 {
   BeginMode3D(sim->camera);
   DrawGrid(20, 1.0F);
@@ -183,40 +198,88 @@ void DrawScene(const Simulation *sim)
   EndMode3D();
 }
 
-void DrawUI(const Simulation *sim)
+Clay_TextElementConfig ui_text_config = {.fontSize = UI_FONT_SIZE, .textColor = {0, 0, 0, 255}};
+
+void RenderSidebar(const Simulation *sim)
 {
-  DrawText("Schwarzschild Geodesic", 10, 10, UI_FONT_SIZE, DARKGRAY);
-
-  int y = 40;
-  DrawText("Camera: Left drag to Orbit, Wheel to Zoom", 10, y, UI_FONT_SIZE, DARKGRAY);
-  y += 25;
-  DrawText("[TAB] Select Particle | [SPACE] Pause | [R] Reset All", 10, y, UI_FONT_SIZE, DARKGRAY);
-  y += 30;
-
-  // Info Panel
-  DrawRectangle(10, y, 350, 200, Fade(LIGHTGRAY, 0.5F));
-  DrawRectangleLines(10, y, 350, 200, GRAY);
-
-  const Particle *sel_p = &sim->particles[sim->selected_particle_idx];
-
-  DrawText(TextFormat("Selected Particle: %d (%s)", sim->selected_particle_idx, sel_p->params.is_massive ? "Massive" : "Photon"),
-           20, y + 10, UI_FONT_SIZE, BLACK);
-
-  if (sel_p->active)
+  CLAY(CLAY_ID("Sidebar"), {.layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM,
+                                       .padding = {16, 16, 16, 16},
+                                       .childGap = 8,
+                                       .sizing = {.width = CLAY_SIZING_FIXED(350)}},
+                            .backgroundColor = {200, 200, 200, 150},
+                            .cornerRadius = {10, 10, 10, 10}})
   {
-    DrawText(TextFormat("Radius (r): %.3f", sel_p->state.r), 20, y + 40, UI_FONT_SIZE, BLACK);
-    DrawText(TextFormat("Phi (deg): %.1f", sel_p->state.phi * 180.0 / PI), 20, y + 65, UI_FONT_SIZE, BLACK);
-    DrawText(TextFormat("Radial Mom (pr): %.3f  [Q/W]", sel_p->state.pr), 20, y + 90, UI_FONT_SIZE, DARKBLUE);
-    DrawText(TextFormat("Model: %s", sel_p->model == PARTICLE_MODEL_SCHW ? "Schwarzschild" : "Weak-field multi-body"),
-             20, y + 165, UI_FONT_SIZE, BLACK);
+    const Particle *sel_p = &sim->particles[sim->selected_particle_idx];
 
-    DrawText(TextFormat("Constraint err: %.3e", sel_p->constraint_err), 20, y + 190, UI_FONT_SIZE, MAROON);
-    DrawText(TextFormat("Energy (E): %.3f", sel_p->params.E), 20, y + 140, UI_FONT_SIZE, BLACK);
+    CLAY_TEXT(
+        Clay_String_FromChar(
+            TextFormat("Selected Particle: %d (%s)", sim->selected_particle_idx, sel_p->params.is_massive ? "Massive" : "Photon")),
+        Clay__StoreTextElementConfig(ui_text_config));
+
+    if (sel_p->active)
+    {
+      CLAY_TEXT(
+          Clay_String_FromChar(TextFormat("Radius (r): %.3f", sel_p->state.r)),
+          Clay__StoreTextElementConfig(ui_text_config));
+      CLAY_TEXT(Clay_String_FromChar(TextFormat("Phi (deg): %.1f", sel_p->state.phi * 180.0 / PI)),
+                Clay__StoreTextElementConfig(ui_text_config));
+
+      Clay_TextElementConfig mom_config = ui_text_config;
+
+      mom_config.textColor = (Clay_Color) {0, 0, 255, 255};
+
+      CLAY_TEXT(Clay_String_FromChar(TextFormat("Radial Mom (pr): %.3f", sel_p->state.pr)),
+                CLAY_TEXT_CONFIG(mom_config));
+
+      CLAY_TEXT(Clay_String_FromChar(TextFormat("Energy (E): %.3f", sel_p->params.E)),
+                Clay__StoreTextElementConfig(ui_text_config));
+
+      CLAY_TEXT(Clay_String_FromChar(TextFormat("Model: %s", sel_p->model == PARTICLE_MODEL_SCHW ? "Schwarzschild" : "Weak-field")),
+                Clay__StoreTextElementConfig(ui_text_config));
+
+      Clay_TextElementConfig err_config = ui_text_config;
+      err_config.textColor = (Clay_Color) {200, 0, 0, 255};
+      CLAY_TEXT(Clay_String_FromChar(TextFormat("Constraint err: %.3e", sel_p->constraint_err)),
+                CLAY_TEXT_CONFIG(err_config));
+    }
+    else
+    {
+      Clay_TextElementConfig inactive_config = ui_text_config;
+      inactive_config.textColor = (Clay_Color) {255, 0, 0, 255};
+      CLAY_TEXT(CLAY_STRING("INACTIVE (Fell in or not init)"),
+                CLAY_TEXT_CONFIG(inactive_config));
+    }
   }
-  else
+}
+
+void RenderTopInstructions()
+{
+  CLAY(CLAY_ID("TopInfo"), {.layout = {.sizing = {.width = CLAY_SIZING_GROW()}}})
   {
-    DrawText("INACTIVE (Fell in or not init)", 20, y + 50, UI_FONT_SIZE, RED);
+    CLAY(CLAY_ID("InstructionList"), {.layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 4}})
+    {
+      Clay_TextElementConfig instr_config = ui_text_config;
+      instr_config.textColor = (Clay_Color) {80, 80, 80, 255};
+      CLAY_TEXT(CLAY_STRING("Camera: Left drag to Orbit, Wheel to Zoom"), CLAY_TEXT_CONFIG(instr_config));
+      CLAY_TEXT(CLAY_STRING("[TAB] Select Particle | [SPACE] Pause | [R] Reset All"), CLAY_TEXT_CONFIG(instr_config));
+    }
   }
+}
+
+void draw_ui(const Simulation *sim)
+{
+  DrawFPS(GetScreenWidth() - 100, 10);
+  Clay_BeginLayout();
+
+  CLAY(CLAY_ID("MainContainer"), {.layout = {.sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_GROW()},
+                                             .padding = {16, 16, 16, 16}}})
+  {
+    RenderSidebar(sim);
+    RenderTopInstructions();
+  }
+
+  Clay_RenderCommandArray renderCommands = Clay_EndLayout();
+  Clay_Raylib_Render(renderCommands, fonts);
 }
 
 int main(void)
@@ -225,52 +288,62 @@ int main(void)
   const int screenWidth = 1280;
   const int screenHeight = 720;
 
+  SetTraceLogLevel(LOG_DEBUG);
   InitWindow(screenWidth, screenHeight, "Schwarzschild Geodesic - Spg");
   SetTargetFPS(60);
 
-  Simulation sim = {0};
-  InitSimulation(&sim);
+  // Initialize Clay
+  uint64_t clayMemorySize = Clay_MinMemorySize();
+  Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayMemorySize, malloc(clayMemorySize));
+  Clay_Initialize(clayMemory, (Clay_Dimensions) {(float) screenWidth, (float) screenHeight}, (Clay_ErrorHandler) {0});
+  fonts[0] = LoadFont(FONT_DEFAULT_PATH);
+  Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
 
-  // Initialize Body 0 (Binary Component 1)
+  Simulation sim = {0};
+  init_simulation(&sim);
+
+  // Initialize Body 0
   double M = 1.0;
   double rs = 2.0 * sim.G * M / (sim.c * sim.c);
-  InitBody(&sim.bodies[0], (Vector3) {5, 0, 0}, M, rs, BLACK);
+  init_body(&sim.bodies[0], (Vector3) {5, 0, 0}, M, rs, BLACK);
   // Velocity for circular orbit: V = sqrt(G*M / (4*R)) = sqrt(1/(20)) approx 0.2236
   sim.bodies[0].velocity = (Vector3) {0, 0, 0.223607F};
   sim.body_count = 1;
 
-  // Body 1 (Binary Component 2)
-  InitBody(&sim.bodies[sim.body_count], (Vector3) {-5, 0, 0}, 1.0, rs, BLACK);
+  // Body 1
+  init_body(&sim.bodies[sim.body_count], (Vector3) {-5, 0, 0}, 1.0, rs, BLACK);
   sim.bodies[sim.body_count].velocity = (Vector3) {0, 0, -0.223607F};
   sim.body_count++;
 
   // We construct a temporary SystemParams.
-  // Note: InitParticle calculates orbit for single body mass M.
-  // Since we have 2M total, these particles will be in elliptical orbits or unbound unless we tweak.
   SystemParams sys = {sim.G, sim.bodies[0].mass, sim.c};
 
   // Particle 0: Massive, far out
-  InitParticle(&sim.particles[0], sys, 15.0, 0.0, 0.0, true);
-  // Manually boost L to account for higher central mass (approx sqrt(2) * L_circ_single)
-  sim.particles[0].params.L *= 1.414;
+  init_particle(&sim.particles[0], sys, 15.0, 0.0, 0.0, true);
 
   // Particle 1: Photon
-  InitParticle(&sim.particles[1], sys, 20.0, 3.14159, -0.8, false);
+  init_particle(&sim.particles[1], sys, 20.0, 3.14159, -0.8, false);
 
   sim.particle_count = 2;
 
   // Main game loop
   while (!WindowShouldClose())
   {
-    UpdateCameraControl(&sim.camera);
+    update_camera_control(&sim.camera);
     float frame_dt = GetFrameTime();
-    HandleInput(&sim, frame_dt);
-    UpdateSimulationPhysics(&sim, frame_dt);
+    handle_input(&sim, frame_dt);
+    update_simulation_physics(&sim, frame_dt);
+
+    // Update Clay State
+    Clay_SetLayoutDimensions((Clay_Dimensions) {(float) GetScreenWidth(), (float) GetScreenHeight()});
+    Vector2 mousePos = GetMousePosition();
+    Clay_SetPointerState((Clay_Vector2) {mousePos.x, mousePos.y}, IsMouseButtonDown(MOUSE_BUTTON_LEFT));
+    Clay_UpdateScrollContainers(true, (Clay_Vector2) {0, GetMouseWheelMove()}, frame_dt);
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
-    DrawScene(&sim);
-    DrawUI(&sim);
+    draw_scene(&sim);
+    draw_ui(&sim);
     EndDrawing();
   }
 

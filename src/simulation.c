@@ -2,7 +2,7 @@
 #include <math.h>
 #include <raymath.h>
 
-void InitSimulation(Simulation *sim)
+void init_simulation(Simulation *sim)
 {
   sim->G = 1.0;
   sim->c = 1.0;
@@ -110,7 +110,7 @@ static void UpdateBodies(Simulation *sim, double dt)
   }
 }
 
-void UpdateSimulationPhysics(Simulation *sim, float frame_dt)
+void update_simulation_physics(Simulation *sim, float frame_dt)
 {
   if (sim->paused)
     return;
@@ -177,8 +177,8 @@ void UpdateSimulationPhysics(Simulation *sim, float frame_dt)
           continue;
 
         p->wf = weakfield_rk4_step(p->wf, sim, sim->fixed_dt);
-        p->constraint_err = weakfield_constraint_err(
-            &p->wf, sim, p->params.is_massive);
+        p->constraint_err = weakfield_constraint_err(&p->wf, sim, p->params.is_massive);
+        weakfield_rk4_step(p->wf, sim, sim->fixed_dt);
       }
 
       // Trail update (world coordinates)

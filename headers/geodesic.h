@@ -1,15 +1,21 @@
 #pragma once
 
 #include <stdbool.h>
+#include "vec3d.h"
 
 // State of the particle in Schwarzschild coordinates (equatorial plane)
 // We treat theta = pi/2 fixed, so we only track t, r, phi.
 typedef struct
 {
   double t;     // Coordinate time
-  double r;     // Radial coordinate
-  double phi;   // Azimuthal angle
-  double pr;    // Radial momentum
+  union {
+    Vec3d u;    // Vector container for (r, phi, pr)
+    struct {
+      double r;     // Radial coordinate
+      double phi;   // Azimuthal angle
+      double pr;    // Radial momentum
+    };
+  };
 } GeodesicState;
 
 // Physical parameters for the central object (System)

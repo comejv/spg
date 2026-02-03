@@ -37,5 +37,5 @@ typedef struct Simulation
 
 } Simulation;
 
-void InitSimulation(Simulation *sim);
-void UpdateSimulationPhysics(Simulation *sim, float frame_dt);
+void init_simulation(Simulation *sim);
+void update_simulation_physics(Simulation *sim, float frame_dt);
